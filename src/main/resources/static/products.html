@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>校圈 - 商品列表</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .navbar a { text-decoration: none; background: #4CAF50; color: white; padding: 8px 16px; border-radius: 4px; }
+        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-bar input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .search-bar button { padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .product-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fff; cursor: pointer; transition: box-shadow 0.2s; }
+        .product-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .product-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
+        .product-price { color: #f44336; font-size: 16px; margin: 8px 0; }
+        .product-desc { color: #666; font-size: 14px; margin-bottom: 8px; }
+        .product-status { font-size: 12px; color: #4CAF50; }
+        .error { color: red; text-align: center; margin-top: 20px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="navbar">
+        <h2>校圈 · 闲置商品</h2>
+        <div>
+            <span id="username-display"></span>
+            <a href="publish.html">发布商品</a>
+            <a href="javascript:void(0)" onclick="logout()">退出登录</a>
+        </div>
+    </div>
+    <div class="search-bar">
+        <input type="text" id="keyword" placeholder="搜索商品标题或描述...">
+        <button onclick="searchProducts()">搜索</button>
+        <button onclick="loadAllProducts()">全部商品</button>
+    </div>
+    <div id="product-list" class="product-grid"></div>
+</div>
+<script>
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+        window.location.href = '/';
+    } else {
+        document.getElementById('username-display').innerText = currentUser;
+    }
+
+    function logout() {
+        localStorage.removeItem('currentUser');
+        window.location.href = '/';
+    }
+
+    async function loadAllProducts() {
+        try {
+            const response = await fetch('/api/product/list');
+            const products = await response.json();
+            displayProducts(products);
+        } catch (error) {
+            document.getElementById('product-list').innerHTML = '<div class="error">加载失败，请刷新重试</div>';
+        }
+    }
+
+    async function searchProducts() {
+        const keyword = document.getElementById('keyword').value.trim();
+        if (!keyword) {
+            loadAllProducts();
+            return;
+        }
+        try {
+            const response = await fetch(`/api/product/search?keyword=${encodeURIComponent(keyword)}`);
+            const products = await response.json();
+            displayProducts(products);
+        } catch (error) {
+            document.getElementById('product-list').innerHTML = '<div class="error">搜索失败</div>';
+        }
+    }
+
+    function displayProducts(products) {
+        const container = document.getElementById('product-list');
+        if (!products.length) {
+            container.innerHTML = '<div style="text-align:center">暂无商品</div>';
+            return;
+        }
+        let html = '';
+        for (const p of products) {
+            html += `
+                <div class="product-card" onclick="viewDetail(${p.id})">
+                    <div class="product-title">${escapeHtml(p.title)}</div>
+                    <div class="product-price">¥${p.price}</div>
+                    <div class="product-desc">${escapeHtml(p.description || '')}</div>
+                    <div class="product-status">状态：${p.status === 1 ? '在售' : '已售'}</div>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    }
+
+    // 跳转到商品详情页
+    function viewDetail(id) {
+        window.location.href = `/detail.html?id=${id}`;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    loadAllProducts();
+</script>
+</body>
+</html>

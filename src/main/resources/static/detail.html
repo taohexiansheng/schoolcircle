@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品详情 - 校圈</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        .back-link { margin-bottom: 20px; display: inline-block; }
+        .product-title { font-size: 24px; margin-bottom: 10px; }
+        .product-price { font-size: 28px; color: #f44336; margin: 15px 0; }
+        .product-info { margin: 10px 0; }
+        .label { font-weight: bold; width: 100px; display: inline-block; }
+        .error { color: red; text-align: center; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="products.html" class="back-link">← 返回商品列表</a>
+    <div id="detail-content">
+        <p>加载中...</p>
+    </div>
+</div>
+<script>
+    function getUrlParam(name) {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get(name);
+    }
+
+    const productId = getUrlParam('id');
+    if (!productId) {
+        document.getElementById('detail-content').innerHTML = '<p class="error">商品ID不存在</p>';
+    } else {
+        fetch(`/api/product/${productId}`)
+            .then(response => {
+                if (!response.ok) throw new Error('网络错误');
+                return response.json();
+            })
+            .then(product => {
+                if (!product || !product.id) {
+                    document.getElementById('detail-content').innerHTML = '<p class="error">商品不存在</p>';
+                    return;
+                }
+                const statusText = product.status === 1 ? '在售' : '已售';
+                const imagesHtml = product.images ? product.images.split(',').map(img => `<img src="${img.trim()}" style="max-width:200px; margin:5px;">`).join('') : '无图片';
+                const html = `
+                    <div class="product-title">${escapeHtml(product.title)}</div>
+                    <div class="product-price">¥${product.price}</div>
+                    <div class="product-info"><span class="label">描述：</span>${escapeHtml(product.description || '暂无')}</div>
+                    <div class="product-info"><span class="label">校区：</span>${escapeHtml(product.campus || '未知')}</div>
+                    <div class="product-info"><span class="label">状态：</span>${statusText}</div>
+                    <div class="product-info"><span class="label">发布时间：</span>${product.createdAt ? new Date(product.createdAt).toLocaleString() : '未知'}</div>
+                    <div class="product-info"><span class="label">图片：</span>${imagesHtml}</div>
+                `;
+                document.getElementById('detail-content').innerHTML = html;
+            })
+            .catch(error => {
+                document.getElementById('detail-content').innerHTML = '<p class="error">加载失败，请稍后重试</p>';
+                console.error(error);
+            });
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+</script>
+</body>
+</html>

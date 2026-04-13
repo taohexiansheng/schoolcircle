@@ -1,0 +1,29 @@
+### 注册用户
+POST http://localhost:8080/api/user/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "123456",
+  "realName": "测试用户",
+  "studentId": "20240001",
+  "campus": "湖西"
+}
+### 添加商品
+POST http://localhost:8080/api/product/add
+Content-Type: application/json
+
+{
+  "title": "二手教材",
+  "description": "高等数学上册，九成新",
+  "price": 25.00,
+  "userId": 1,
+  "status": "available",
+  "images": "[\"image1.jpg\"]",
+  "category": "教材"
+}
+
+### 查询商品列表
+GET http://localhost:8080/api/product/list
+### 登录
+GET http://localhost:8080/api/user/login?username=testuser&password=123456

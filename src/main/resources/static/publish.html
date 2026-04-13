@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>发布商品 - 校圈</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, textarea, select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        .message { margin-top: 15px; text-align: center; }
+        .error { color: red; }
+        .success { color: green; }
+        .navbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .navbar a { text-decoration: none; background: #ddd; padding: 5px 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="navbar">
+        <h2>发布闲置商品</h2>
+        <a href="products.html">返回商品列表</a>
+    </div>
+    <form id="publish-form">
+        <div class="form-group">
+            <label>标题 *</label>
+            <input type="text" id="title" required>
+        </div>
+        <div class="form-group">
+            <label>描述</label>
+            <textarea id="description" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+            <label>价格 *</label>
+            <input type="number" step="0.01" id="price" required>
+        </div>
+        <div class="form-group">
+            <label>图片链接（可选，多个用逗号分隔）</label>
+            <input type="text" id="images" placeholder="image1.jpg,image2.jpg">
+        </div>
+        <div class="form-group">
+            <label>校区</label>
+            <select id="campus">
+                <option value="湖西">湖西</option>
+                <option value="湖东">湖东</option>
+            </select>
+        </div>
+        <button type="submit">发布商品</button>
+    </form>
+    <div id="message" class="message"></div>
+</div>
+<script>
+    // 获取本地存储的令牌和用户名
+    const token = localStorage.getItem('token');
+    const currentUser = localStorage.getItem('currentUser');
+
+    // 未登录则跳转到登录页
+    if (!token || !currentUser) {
+        alert('请先登录');
+        window.location.href = '/';
+    }
+
+    // 监听表单提交事件
+    document.getElementById('publish-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const price = parseFloat(document.getElementById('price').value);
+        const images = document.getElementById('images').value;
+        const campus = document.getElementById('campus').value;
+
+        if (!title || isNaN(price) || price <= 0) {
+            showMessage('请正确填写标题和价格', 'error');
+            return;
+        }
+
+        // 构建商品对象（注意：不包含 userId，后端会从令牌中解析）
+        const product = {
+            title,
+            description,
+            price,
+            images,
+            campus,
+            status: 1   // 1 表示在售
+        };
+
+        try {
+            const response = await fetch('/api/product/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token   // 关键：携带令牌
+                },
+                body: JSON.stringify(product)
+            });
+
+            const result = await response.text();
+            if (response.ok && result === '商品发布成功') {
+                showMessage('发布成功！正在跳转...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'products.html';
+                }, 1500);
+            } else {
+                showMessage('发布失败：' + result, 'error');
+            }
+        } catch (err) {
+            showMessage('网络错误，请稍后重试', 'error');
+        }
+    });
+
+    function showMessage(msg, type) {
+        const msgDiv = document.getElementById('message');
+        msgDiv.innerText = msg;
+        msgDiv.className = 'message ' + type;
+    }
+</script>
+</body>
+</html>
