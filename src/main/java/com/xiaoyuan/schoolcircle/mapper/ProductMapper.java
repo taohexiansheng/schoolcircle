@@ -30,4 +30,7 @@ public interface ProductMapper {
 
     @Select("SELECT * FROM product WHERE title LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%')")
     List<Product> search(String keyword);
+    @Update("UPDATE product SET status = #{status} WHERE id = #{id}")
+    int updateStatus(@Param("id") Integer id, @Param("status") Integer status);
+
 }

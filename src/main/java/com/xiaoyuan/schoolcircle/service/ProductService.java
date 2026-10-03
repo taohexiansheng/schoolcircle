@@ -39,18 +39,31 @@ public class ProductService {
         return productMapper.findByUserId(userId);
     }
 
-    public boolean updateProduct(Product product) {
-        if (product.getId() == null || productMapper.findById(product.getId()) == null) {
+    public boolean updateProduct(Product product, Integer currentUserId) {
+        Product existing = productMapper.findById(product.getId());
+        if (existing == null || !existing.getUserId().equals(currentUserId)) {
             return false;
         }
         return productMapper.update(product) > 0;
     }
 
-    public boolean deleteProduct(Integer id) {
+    public boolean deleteProduct(Integer id, Integer currentUserId) {
+        Product existing = productMapper.findById(id);
+        if (existing == null || !existing.getUserId().equals(currentUserId)) {
+            return false;
+        }
         return productMapper.deleteById(id) > 0;
     }
 
     public List<Product> search(String keyword) {
         return productMapper.search(keyword);
+    }
+
+    public boolean updateStatus(Integer id, Integer status, Integer userId) {
+        Product product = productMapper.findById(id);
+        if (product == null || !product.getUserId().equals(userId)) {
+            return false;
+        }
+        return productMapper.updateStatus(id, status) > 0;
     }
 }

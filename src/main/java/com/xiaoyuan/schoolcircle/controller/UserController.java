@@ -34,6 +34,7 @@ public class UserController {
             result.put("success", true);
             result.put("token", token);
             result.put("username", user.getUsername());
+            result.put("userId", user.getId());   // 新增返回 userId
         } else {
             result.put("success", false);
             result.put("message", "用户名或密码错误");

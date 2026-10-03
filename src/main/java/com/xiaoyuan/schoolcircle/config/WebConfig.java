@@ -16,16 +16,32 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns("/api/user/login", "/api/user/register", "/api/product/list", "/api/product/search");
+                // 需要认证的接口（明确列出）
+                .addPathPatterns(
+                        "/api/product/add",
+                        "/api/product/update",
+                        "/api/product/delete/**",
+                        "/api/product/user/**",     // 我的商品接口需要认证
+                        "/api/order/**"             // 订单接口需要认证（新增）
+                )
+                // 公开接口（不需要 token）
+                .excludePathPatterns(
+                        "/api/user/login",
+                        "/api/user/register",
+                        "/api/product/list",
+                        "/api/product/search",
+                        "/api/product/{id}"        // 商品详情公开
+                );
     }
 
+    // 如果需要跨域支持，可以添加 CORS 配置（可选）
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:8080")  // 你的前端地址，同源可写 "*"
+                .allowedOrigins("http://localhost:8080")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
+
 }

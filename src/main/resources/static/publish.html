@@ -14,15 +14,18 @@
         .message { margin-top: 15px; text-align: center; }
         .error { color: red; }
         .success { color: green; }
-        .navbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
-        .navbar a { text-decoration: none; background: #ddd; padding: 5px 10px; border-radius: 4px; }
+        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .navbar a { text-decoration: none; background: #ddd; padding: 5px 10px; border-radius: 4px; margin-left: 10px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="navbar">
         <h2>发布闲置商品</h2>
-        <a href="products.html">返回商品列表</a>
+        <div>
+            <a href="products.html">商品列表</a>
+            <a href="my-products.html">我的商品</a>
+        </div>
     </div>
     <form id="publish-form">
         <div class="form-group">
@@ -53,17 +56,14 @@
     <div id="message" class="message"></div>
 </div>
 <script>
-    // 获取本地存储的令牌和用户名
     const token = localStorage.getItem('token');
     const currentUser = localStorage.getItem('currentUser');
 
-    // 未登录则跳转到登录页
     if (!token || !currentUser) {
         alert('请先登录');
         window.location.href = '/';
     }
 
-    // 监听表单提交事件
     document.getElementById('publish-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -78,14 +78,13 @@
             return;
         }
 
-        // 构建商品对象（注意：不包含 userId，后端会从令牌中解析）
         const product = {
             title,
             description,
             price,
             images,
             campus,
-            status: 1   // 1 表示在售
+            status: 1
         };
 
         try {
@@ -93,7 +92,7 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token   // 关键：携带令牌
+                    'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify(product)
             });

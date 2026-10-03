@@ -110,6 +110,7 @@
                 localStorage.setItem('token', data.token);
                 localStorage.setItem('currentUser', data.username);
                 loginMessage.textContent = '登录成功';
+                localStorage.setItem('userId', data.userId);
                 loginMessage.className = 'message success';
                 window.location.href = '/products.html';
             } else {

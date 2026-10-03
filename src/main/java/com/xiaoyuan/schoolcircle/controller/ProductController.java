@@ -50,18 +50,17 @@ public class ProductController {
 
     @PutMapping("/update")
     public String updateProduct(@RequestBody Product product) {
-        Integer userId = getCurrentUserId();
-        if (userId == null) return "未登录";
-        // 可选：检查商品是否属于当前用户
-        boolean success = productService.updateProduct(product);
+        Integer currentUserId = getCurrentUserId();
+        if (currentUserId == null) return "未登录";
+        boolean success = productService.updateProduct(product, currentUserId);
         return success ? "更新成功" : "更新失败";
     }
 
     @DeleteMapping("/{id}")
     public String deleteProduct(@PathVariable Integer id) {
-        Integer userId = getCurrentUserId();
-        if (userId == null) return "未登录";
-        boolean success = productService.deleteProduct(id);
+        Integer currentUserId = getCurrentUserId();
+        if (currentUserId == null) return "未登录";
+        boolean success = productService.deleteProduct(id, currentUserId);
         return success ? "删除成功" : "删除失败";
     }
 
