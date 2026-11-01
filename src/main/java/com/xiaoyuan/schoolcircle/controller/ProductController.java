@@ -68,4 +68,8 @@ public class ProductController {
     public List<Product> search(@RequestParam String keyword) {
         return productService.search(keyword);
     }
+    @GetMapping("/campus")
+    public List<Product> listByCampus(@RequestParam String campus) {
+        return productService.getProductsByCampus(campus);
+    }
 }

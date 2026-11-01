@@ -4,54 +4,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>校圈 - 商品列表</title>
+    <!-- 引入 Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
-        .container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-        .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .navbar a { text-decoration: none; background: #4CAF50; color: white; padding: 8px 16px; border-radius: 4px; }
-        <a href="my-products.html">我的商品</a>
-        .search-bar { display: flex; gap: 10px; margin-bottom: 20px; }
-        .search-bar input { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .search-bar button { padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .product-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fff; cursor: pointer; transition: box-shadow 0.2s; }
-        .product-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .product-title { font-size: 18px; font-weight: bold; margin-bottom: 8px; }
-        .product-price { color: #f44336; font-size: 16px; margin: 8px 0; }
-        .product-desc { color: #666; font-size: 14px; margin-bottom: 8px; }
-        .product-status { font-size: 12px; color: #4CAF50; }
-        .error { color: red; text-align: center; margin-top: 20px; }
+        body { background-color: #f8f9fa; }
+        .navbar { box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .product-card {
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        .product-price { color: #dc3545; font-size: 1.25rem; font-weight: bold; }
+        .product-title { font-weight: 600; font-size: 1.1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .product-desc { color: #6c757d; font-size: 0.9rem; height: 40px; overflow: hidden; }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="navbar">
-        <h2>校圈 · 闲置商品</h2>
-        <div>
-            <span id="username-display"></span>
-            <a href="publish.html">发布商品</a>
-            <a href="javascript:void(0)" onclick="logout()">退出登录</a>
+<!-- 顶部导航 -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-success mb-4">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="#">校圈</a>
+        <div class="d-flex align-items-center">
+            <span class="text-white me-3" id="username-display"></span>
+            <a href="publish.html" class="btn btn-light btn-sm me-2 text-success fw-bold">发布商品</a>
+            <a href="my-products.html" class="btn btn-outline-light btn-sm me-2">我的商品</a>
+            <a href="orders.html" class="btn btn-outline-light btn-sm me-2">我的订单</a>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()">退出</button>
         </div>
     </div>
-    <div class="search-bar">
-        <input type="text" id="keyword" placeholder="搜索商品标题或描述...">
-        <button onclick="searchProducts()">搜索</button>
-        <button onclick="loadAllProducts()">全部商品</button>
+</nav>
+
+<div class="container pb-5">
+    <!-- 搜索栏 -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8">
+            <div class="input-group shadow-sm">
+                <input type="text" class="form-control" id="keyword" placeholder="搜索商品标题或描述...">
+                <button class="btn btn-success" onclick="searchProducts()">搜索</button>
+                <button class="btn btn-outline-secondary" onclick="loadAllProducts()">全部</button>
+                <button class="btn btn-outline-primary" onclick="filterByCampus('湖西')">湖西</button>
+                <button class="btn btn-outline-info" onclick="filterByCampus('湖东')">湖东</button>
+            </div>
+        </div>
     </div>
-    <div id="product-list" class="product-grid"></div>
+
+    <!-- 商品网格 -->
+    <div id="product-list" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4"></div>
 </div>
+
 <script>
     const currentUser = localStorage.getItem('currentUser');
-    if (!currentUser) {
-        window.location.href = '/';
-    } else {
-        document.getElementById('username-display').innerText = currentUser;
-    }
+    if (!currentUser) { window.location.href = '/'; } else { document.getElementById('username-display').innerText = '你好，' + currentUser; }
 
-    function logout() {
-        localStorage.removeItem('currentUser');
-        window.location.href = '/';
-    }
+    function logout() { localStorage.clear(); window.location.href = '/'; }
 
     async function loadAllProducts() {
         try {
@@ -59,57 +69,60 @@
             const products = await response.json();
             displayProducts(products);
         } catch (error) {
-            document.getElementById('product-list').innerHTML = '<div class="error">加载失败，请刷新重试</div>';
+            document.getElementById('product-list').innerHTML = '<div class="col-12 text-center text-danger py-5">加载失败，请刷新重试</div>';
         }
     }
 
     async function searchProducts() {
         const keyword = document.getElementById('keyword').value.trim();
-        if (!keyword) {
-            loadAllProducts();
-            return;
-        }
+        if (!keyword) { loadAllProducts(); return; }
         try {
             const response = await fetch(`/api/product/search?keyword=${encodeURIComponent(keyword)}`);
             const products = await response.json();
             displayProducts(products);
-        } catch (error) {
-            document.getElementById('product-list').innerHTML = '<div class="error">搜索失败</div>';
-        }
+        } catch (error) { document.getElementById('product-list').innerHTML = '<div class="col-12 text-center text-danger py-5">搜索失败</div>'; }
+    }
+
+    async function filterByCampus(campus) {
+        try {
+            const response = await fetch(`/api/product/campus?campus=${encodeURIComponent(campus)}`);
+            const products = await response.json();
+            displayProducts(products);
+        } catch (error) { document.getElementById('product-list').innerHTML = '<div class="col-12 text-center text-danger py-5">筛选失败</div>'; }
     }
 
     function displayProducts(products) {
         const container = document.getElementById('product-list');
-        if (!products.length) {
-            container.innerHTML = '<div style="text-align:center">暂无商品</div>';
-            return;
-        }
+        if (!products.length) { container.innerHTML = '<div class="col-12 text-center text-muted py-5">暂无商品</div>'; return; }
+
         let html = '';
         for (const p of products) {
+            // 如果有图片，可以使用背景图；这里用占位图
             html += `
-                <div class="product-card" onclick="viewDetail(${p.id})">
-                    <div class="product-title">${escapeHtml(p.title)}</div>
-                    <div class="product-price">¥${p.price}</div>
-                    <div class="product-desc">${escapeHtml(p.description || '')}</div>
-                    <div class="product-status">状态：${p.status === 1 ? '在售' : '已售'}</div>
+                <div class="col">
+                    <div class="card h-100 product-card shadow-sm border-0" onclick="viewDetail(${p.id})">
+                        <div class="card-body">
+                            <div class="product-title text-dark mb-2">${escapeHtml(p.title)}</div>
+                            <div class="product-price mb-2">¥${p.price}</div>
+                            <div class="product-desc">${escapeHtml(p.description || '暂无描述')}</div>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <span class="badge ${p.status === 1 ? 'bg-success' : 'bg-secondary'}">${p.status === 1 ? '在售' : '已售'}</span>
+                                <span class="text-muted small">校区：${p.campus || '未知'}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
         }
         container.innerHTML = html;
     }
 
-    // 跳转到商品详情页
-    function viewDetail(id) {
-        window.location.href = `/detail.html?id=${id}`;
-    }
+    function viewDetail(id) { window.location.href = `/detail.html?id=${id}`; }
 
     function escapeHtml(str) {
         if (!str) return '';
         return str.replace(/[&<>]/g, function(m) {
-            if (m === '&') return '&amp;';
-            if (m === '<') return '&lt;';
-            if (m === '>') return '&gt;';
-            return m;
+            if (m === '&') return '&amp;'; if (m === '<') return '&lt;'; if (m === '>') return '&gt;'; return m;
         });
     }
 

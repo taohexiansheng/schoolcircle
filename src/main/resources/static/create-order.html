@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>确认订单 - 校缘智链</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 8px; }
+        .product-info { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .product-title { font-size: 18px; font-weight: bold; }
+        .product-price { color: #f44336; font-size: 22px; margin: 10px 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { background: #4CAF50; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; width: 100%; }
+        .message { margin-top: 15px; text-align: center; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2>确认订单</h2>
+    <div class="product-info" id="product-info">加载中...</div>
+    <div class="form-group">
+        <label>买家留言（可选）</label>
+        <textarea id="buyer-message" rows="3" placeholder="例如：什么时候方便面交？"></textarea>
+    </div>
+    <button onclick="submitOrder()">提交订单</button>
+    <div id="message" class="message"></div>
+</div>
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+        alert('请先登录');
+        window.location.href = '/';
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get('productId');
+
+    fetch(`/api/product/${productId}`, {
+        headers: { 'Authorization': 'Bearer ' + token }
+    })
+        .then(res => res.json())
+        .then(product => {
+            document.getElementById('product-info').innerHTML = `
+            <div class="product-title">${product.title}</div>
+            <div class="product-price">¥${product.price}</div>
+            <div>${product.description || ''}</div>
+        `;
+        })
+        .catch(() => {
+            document.getElementById('product-info').innerHTML = '<div class="error">商品加载失败</div>';
+        });
+
+    async function submitOrder() {
+        const buyerMessage = document.getElementById('buyer-message').value.trim();
+        try {
+            const response = await fetch('/api/order/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ productId: parseInt(productId), buyerMessage })
+            });
+            const data = await response.json();
+            if (data.success) {
+                document.getElementById('message').textContent = '下单成功！正在跳转...';
+                document.getElementById('message').className = 'message success';
+                setTimeout(() => {
+                    window.location.href = '/orders.html';
+                }, 1500);
+            } else {
+                document.getElementById('message').textContent = data.message || '下单失败';
+                document.getElementById('message').className = 'message error';
+            }
+        } catch (err) {
+            document.getElementById('message').textContent = '网络错误';
+            document.getElementById('message').className = 'message error';
+        }
+    }
+</script>
+</body>
+</html>

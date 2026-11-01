@@ -13,7 +13,9 @@ public class Product {
     private String campus;
     private Integer status;      // 1:在售 0:已售
     private Date createdAt;
-
+    private Integer sellerCredit;
+    public Integer getSellerCredit() { return sellerCredit; }
+    public void setSellerCredit(Integer sellerCredit) { this.sellerCredit = sellerCredit; }
     // getter 和 setter（使用 IDEA 快捷键 Alt+Insert 自动生成）
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

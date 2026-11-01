@@ -66,4 +66,7 @@ public class ProductService {
         }
         return productMapper.updateStatus(id, status) > 0;
     }
+    public List<Product> getProductsByCampus(String campus) {
+        return productMapper.findByCampus(campus);
+    }
 }

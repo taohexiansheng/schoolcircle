@@ -22,7 +22,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/product/update",
                         "/api/product/delete/**",
                         "/api/product/user/**",     // 我的商品接口需要认证
-                        "/api/order/**"             // 订单接口需要认证（新增）
+                        "/api/order/**",             // 订单接口需要认证（新增）
+                        "/api/review/**"
                 )
                 // 公开接口（不需要 token）
                 .excludePathPatterns(
@@ -30,7 +31,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/user/register",
                         "/api/product/list",
                         "/api/product/search",
-                        "/api/product/{id}"        // 商品详情公开
+                        "/api/product/{id}",
+                        "/api/ai/**"
                 );
     }
 

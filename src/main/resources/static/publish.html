@@ -16,6 +16,14 @@
         .success { color: green; }
         .navbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .navbar a { text-decoration: none; background: #ddd; padding: 5px 10px; border-radius: 4px; margin-left: 10px; }
+
+        /* AI 识别区域样式 */
+        .ai-ocr-box { margin-top: 10px; padding: 12px; background: #f0fdf4; border: 1px dashed #4CAF50; border-radius: 6px; }
+        .ai-ocr-box label { color: #166534; font-size: 14px; margin-bottom: 8px; }
+        .ai-ocr-box input[type="file"] { border: none; padding: 5px 0; background: transparent; }
+        .btn-ocr { background: #2196F3; padding: 6px 12px; font-size: 13px; margin-left: 10px; }
+        .btn-ocr:hover { background: #1976D2; }
+        #ocr-tip { display: block; margin-top: 8px; font-size: 13px; color: #666; }
     </style>
 </head>
 <body>
@@ -25,13 +33,23 @@
         <div>
             <a href="products.html">商品列表</a>
             <a href="my-products.html">我的商品</a>
+            <a href="orders.html">我的订单</a>
         </div>
     </div>
     <form id="publish-form">
         <div class="form-group">
             <label>标题 *</label>
-            <input type="text" id="title" required>
+            <input type="text" id="title" required placeholder="请输入商品标题">
+
+            <!-- AI 拍照识别区域 -->
+            <div class="ai-ocr-box">
+                <label>🤖 AI 智能识别（上传教材/商品图片，自动提取书名与出版社）</label>
+                <input type="file" id="ocr-file" accept="image/*">
+                <button type="button" class="btn-ocr" onclick="uploadAndRecognize()">一键识别</button>
+                <span id="ocr-tip"></span>
+            </div>
         </div>
+
         <div class="form-group">
             <label>描述</label>
             <textarea id="description" rows="3"></textarea>
@@ -64,6 +82,68 @@
         window.location.href = '/';
     }
 
+    // AI 识别函数
+    async function uploadAndRecognize() {
+        const fileInput = document.getElementById('ocr-file');
+        if (!fileInput.files.length) {
+            alert('请先选择一张图片');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        const tip = document.getElementById('ocr-tip');
+        tip.innerText = 'AI 识别中，请稍候...';
+        tip.style.color = '#666';
+
+        try {
+            // 调用后端 OCR 接口
+            const response = await fetch('/api/ai/ocr', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) throw new Error('请求失败');
+
+            const text = await response.text();
+            if (text && text.trim() !== '') {
+                // 后端返回格式预期为："有机化学 | 高等教育出版社"
+                if (text.includes("|")) {
+                    const parts = text.split("|");
+                    const bookName = parts[0].trim();
+                    const publisher = parts[1].trim();
+
+                    // 填入标题
+                    document.getElementById('title').value = bookName;
+
+                    // 自动把出版社追加到描述里（如果描述原本为空）
+                    const descInput = document.getElementById('description');
+                    if (!descInput.value.trim()) {
+                        descInput.value = "出版社：" + publisher;
+                    } else {
+                        descInput.value += " | 出版社：" + publisher;
+                    }
+
+                    tip.innerText = `✅ 识别成功：${text}`;
+                } else {
+                    // 如果没有提取到出版社，直接填入整体
+                    document.getElementById('title').value = text.substring(0, 20);
+                    tip.innerText = `✅ 识别成功：${text}`;
+                }
+                tip.style.color = '#4CAF50';
+            } else {
+                tip.innerText = '⚠️ 未识别到有效文字';
+                tip.style.color = '#ff9800';
+            }
+        } catch (err) {
+            console.error(err);
+            tip.innerText = '❌ 识别失败，请重试';
+            tip.style.color = '#f44336';
+        }
+    }
+
+    // 提交表单发布商品
     document.getElementById('publish-form').addEventListener('submit', async (e) => {
         e.preventDefault();
 

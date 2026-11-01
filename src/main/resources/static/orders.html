@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>我的订单 - 校缘智链</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
+        .navbar { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .navbar a { text-decoration: none; background: #ddd; padding: 5px 10px; border-radius: 4px; margin-left: 10px; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab { padding: 8px 20px; background: #eee; border-radius: 4px; cursor: pointer; }
+        .tab.active { background: #4CAF50; color: white; }
+        .order-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .order-header { display: flex; justify-content: space-between; color: #666; font-size: 13px; margin-bottom: 10px; }
+        .order-body { display: flex; gap: 15px; }
+        .order-img { width: 80px; height: 80px; background: #eee; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 12px; }
+        .order-info { flex: 1; }
+        .order-title { font-weight: bold; margin-bottom: 5px; }
+        .order-price { color: #f44336; font-size: 18px; }
+        .order-status { font-size: 13px; margin-top: 5px; }
+        .actions { margin-top: 10px; }
+        .actions button { margin-right: 10px; padding: 5px 15px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #4CAF50; color: white; }
+        .btn-danger { background: #f44336; color: white; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="navbar">
+        <h2>我的订单</h2>
+        <div>
+            <a href="products.html">商品列表</a>
+            <a href="my-products.html">我的商品</a>
+            <a href="javascript:void(0)" onclick="logout()">退出登录</a>
+        </div>
+    </div>
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('buyer', this)">我买到的</div>
+        <div class="tab" onclick="switchTab('seller', this)">我卖出的</div>
+    </div>
+    <div id="order-list">加载中...</div>
+</div>
+<script>
+    const token = localStorage.getItem('token');
+    if (!token) { window.location.href = '/'; }
+
+    const statusMap = { 0: '待付款', 1: '待发货', 2: '待收货', 3: '已完成', 4: '已取消' };
+
+    function switchTab(type, el) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
+        loadOrders(type);
+    }
+
+    async function loadOrders(type) {
+        try {
+            const response = await fetch(`/api/order/${type}`, {
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const orders = await response.json();
+            displayOrders(orders, type);
+        } catch (err) {
+            document.getElementById('order-list').innerHTML = '<div>加载失败</div>';
+        }
+    }
+
+    function displayOrders(orders, type) {
+        if (!orders.length) {
+            document.getElementById('order-list').innerHTML = '<div style="text-align:center; padding:40px;">暂无订单</div>';
+            return;
+        }
+        let html = '';
+        for (const o of orders) {
+            let actions = '';
+            if (type === 'buyer') {
+                if (o.status === 0) actions = `<button class="btn-primary" onclick="updateStatus(${o.id}, 1)">模拟付款</button><button class="btn-danger" onclick="updateStatus(${o.id}, 4)">取消订单</button>`;
+                else if (o.status === 2) actions = `<button class="btn-primary" onclick="updateStatus(${o.id}, 3)">确认收货</button>`;
+                else if (o.status === 3) actions = `<button class="btn-primary" onclick="openReview(${o.id})">评价</button>`;
+            } else if (type === 'seller') {
+                if (o.status === 1) actions = `<button class="btn-primary" onclick="updateStatus(${o.id}, 2)">确认发货</button>`;
+                else if (o.status === 3) actions = `<button class="btn-primary" onclick="openReview(${o.id})">评价</button>`;
+            }
+            html += `
+                <div class="order-card">
+                    <div class="order-header">
+                        <span>订单号：${o.orderNo}</span>
+                        <span>${new Date(o.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div class="order-body">
+                        <div class="order-img">暂无图片</div>
+                        <div class="order-info">
+                            <div class="order-title">${o.productTitle || '商品已删除'}</div>
+                            <div class="order-price">¥${o.price}</div>
+                            <div class="order-status">状态：<strong>${statusMap[o.status] || '未知'}</strong></div>
+                            ${o.buyerMessage ? `<div style="color:#666;font-size:13px;">留言：${o.buyerMessage}</div>` : ''}
+                        </div>
+                    </div>
+                    ${actions ? `<div class="actions">${actions}</div>` : ''}
+                </div>
+            `;
+        }
+        document.getElementById('order-list').innerHTML = html;
+    }
+
+    async function updateStatus(orderId, status) {
+        if (!confirm('确定执行此操作吗？')) return;
+        try {
+            const response = await fetch(`/api/order/${orderId}/status?status=${status}`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            const result = await response.text();
+            if (response.ok && result === '更新成功') {
+                alert('操作成功');
+                loadOrders(document.querySelector('.tab.active').textContent.includes('买到') ? 'buyer' : 'seller');
+            } else {
+                alert('操作失败：' + result);
+            }
+        } catch (err) {
+            alert('网络错误');
+        }
+    }
+
+    // 打开评价弹窗
+    function openReview(orderId) {
+        const rating = prompt('请输入评分（1-5星）：', '5');
+        if (rating === null) return;
+        const r = parseInt(rating);
+        if (isNaN(r) || r < 1 || r > 5) {
+            alert('评分必须是1-5之间的数字');
+            return;
+        }
+        const content = prompt('请输入评价内容（可选）：', '') || '';
+        submitReview(orderId, r, content);
+    }
+
+    // 提交评价
+    async function submitReview(orderId, rating, content) {
+        try {
+            const response = await fetch('/api/review/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ orderId, rating, content })
+            });
+            const data = await response.json();
+            if (data.success) {
+                alert('评价成功！');
+                loadOrders(document.querySelector('.tab.active').textContent.includes('买到') ? 'buyer' : 'seller');
+            } else {
+                alert('评价失败：' + data.message);
+            }
+        } catch (err) {
+            alert('网络错误');
+        }
+    }
+
+    function logout() {
+        localStorage.clear();
+        window.location.href = '/';
+    }
+
+    loadOrders('buyer');
+</script>
+</body>
+</html>

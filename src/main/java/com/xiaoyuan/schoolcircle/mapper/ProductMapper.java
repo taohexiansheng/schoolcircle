@@ -13,7 +13,9 @@ public interface ProductMapper {
     @Options(useGeneratedKeys = true, keyProperty = "id")
     int insert(Product product);
 
-    @Select("SELECT * FROM product WHERE id = #{id}")
+    @Select("SELECT p.*, u.credit_score AS sellerCredit " +
+            "FROM product p LEFT JOIN user u ON p.user_id = u.id " +
+            "WHERE p.id = #{id}")
     Product findById(Integer id);
 
     @Select("SELECT * FROM product ORDER BY created_at DESC")
@@ -32,5 +34,6 @@ public interface ProductMapper {
     List<Product> search(String keyword);
     @Update("UPDATE product SET status = #{status} WHERE id = #{id}")
     int updateStatus(@Param("id") Integer id, @Param("status") Integer status);
-
+    @Select("SELECT * FROM product WHERE status = 1 AND campus = #{campus} ORDER BY created_at DESC")
+    List<Product> findByCampus(String campus);
 }
